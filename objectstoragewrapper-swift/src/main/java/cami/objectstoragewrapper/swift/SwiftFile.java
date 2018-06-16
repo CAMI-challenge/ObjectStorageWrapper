@@ -8,25 +8,18 @@ import java.util.Date;
 public class SwiftFile implements IFile {
     private final SwiftObject swiftObject;
     private final String name;
-    private final String key;
+    private final String path;
 
     protected SwiftFile(SwiftObject object) {
-//		this.summary = lSummary;
-//		this.key = lKey;
-//
-//		this.object = object;
-//		String wholeKey = summary.getKey();
-//		String name = wholeKey.substring(key.length()-1);
-//		String[] names = name.split("/");
-//		this.name = names[1];
         this.swiftObject = object;
-        this.name = object.getName();
-        this.key = "test";
+        int index = object.getName().lastIndexOf('/');
+        this.name = object.getName().substring(index + 1);
+        this.path = object.getName();
     }
 
     @Override
     public String getPath() {
-        return key;
+        return path;
     }
 
     @Override
@@ -41,7 +34,7 @@ public class SwiftFile implements IFile {
 
     @Override
     public int hashCode() {
-        return key == null || name == null ? 0 : key.hashCode() + name.hashCode();
+        return path == null || name == null ? 0 : path.hashCode() + name.hashCode();
     }
 
     @Override
@@ -51,9 +44,9 @@ public class SwiftFile implements IFile {
         if (obj == null)
             return false;
         SwiftFile other = (SwiftFile) obj;
-        if (key == null) {
-            return other.key == null;
+        if (path == null) {
+            return other.path == null;
         }
-        return key.equals(other.key);
+        return path.equals(other.path);
     }
 }

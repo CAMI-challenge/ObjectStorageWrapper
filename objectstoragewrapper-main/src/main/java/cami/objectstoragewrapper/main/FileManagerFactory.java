@@ -45,4 +45,21 @@ public final class FileManagerFactory {
                                                String projectId, String domain) {
         return new SwiftFileManager(bucketName, username, password, url, projectId, domain);
     }
+
+    /**
+     * Create a new Swift file manager instance with the provided credentials.
+     *
+     * @param bucketName The bucket associated with the file manager.
+     * @param username   Authentication username.
+     * @param password   Authentication password.
+     * @param url        Authentication url.
+     * @param projectId  Project the bucket was created in.
+     * @param domain     Project domain.
+     * @param logging    Enable or disable logging of HTTP requests.
+     * @return {@link SwiftFileManager} instance
+     */
+    public static IFileManager getSwiftManager(String bucketName, String username, String password, String url,
+                                               String projectId, String domain, boolean logging) {
+        return new SwiftFileManager(bucketName, username, password, url, projectId, domain, logging);
+    }
 }

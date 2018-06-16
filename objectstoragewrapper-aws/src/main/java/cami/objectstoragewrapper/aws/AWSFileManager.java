@@ -40,7 +40,10 @@ public class AWSFileManager implements IFileManager {
             clientConfiguration.setProxyHost(httpsHost);
             clientConfiguration.setProxyPort(Integer.parseInt(httpsPort));
         }
-        connection = new AmazonS3Client(new EnvironmentVariableCredentialsProvider(), clientConfiguration);
+        connection = AmazonS3Client.builder()
+                .withClientConfiguration(clientConfiguration)
+                .withCredentials(new EnvironmentVariableCredentialsProvider())
+                .build();
     }
 
     public AWSFileManager(String bucketName, String credentialsPath, String profile) {
@@ -54,7 +57,10 @@ public class AWSFileManager implements IFileManager {
             clientConfiguration.setProxyHost(httpsHost);
             clientConfiguration.setProxyPort(Integer.parseInt(httpsPort));
         }
-        connection = new AmazonS3Client(new ProfileCredentialsProvider(new ProfilesConfigFile(credentialsPath), profile), clientConfiguration);
+        connection = AmazonS3Client.builder()
+                .withClientConfiguration(clientConfiguration)
+                .withCredentials(new ProfileCredentialsProvider(new ProfilesConfigFile(credentialsPath), profile))
+                .build();
     }
 
     public void createDirs(String path) {
@@ -63,7 +69,7 @@ public class AWSFileManager implements IFileManager {
         metadata.setContentLength(0);
         // Create empty content
         InputStream emptyContent = new ByteArrayInputStream(new byte[0]);
-        // Create a PutObjectRequest passing the foldername suffixed by /
+        // Create a PutObjectRequest passing the folder name suffixed by /
         PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, path + FOLDER_SUFFIX,
                 emptyContent, metadata);
         // Send request to S3 to create folder
@@ -76,7 +82,6 @@ public class AWSFileManager implements IFileManager {
         request.withPrefix(path).withDelimiter(path);
         ObjectListing objects = connection.listObjects(request);
         Set<IFile> set = new HashSet<>();
-
         do {
             for (S3ObjectSummary objectSummary : objects.getObjectSummaries()) {
                 // filter out root
@@ -92,28 +97,24 @@ public class AWSFileManager implements IFileManager {
     public void uploadFile(String path, InputStream stream, Long length) {
         ObjectMetadata data = new ObjectMetadata();
         data.setContentLength(length);
-        connection.putObject(new PutObjectRequest(bucketName, path, stream,
-                data));
+        connection.putObject(new PutObjectRequest(bucketName, path, stream, data));
     }
 
     public void uploadFile(String path, InputStream stream, Long length, String fingerprint) {
         ObjectMetadata data = new ObjectMetadata();
         data.addUserMetadata(MD5_KEY, fingerprint);
         data.setContentLength(length);
-        connection.putObject(new PutObjectRequest(bucketName, path, stream,
-                data));
+        connection.putObject(new PutObjectRequest(bucketName, path, stream, data));
     }
 
     public void delete(String path) {
-        for (S3ObjectSummary file : connection.listObjects(bucketName, path)
-                .getObjectSummaries()) {
+        for (S3ObjectSummary file : connection.listObjects(bucketName, path).getObjectSummaries()) {
             connection.deleteObject(bucketName, file.getKey());
         }
     }
 
     public String getMD5(String path) {
-        return connection.getObject(new GetObjectRequest(bucketName, path))
-                .getObjectMetadata().getETag();
+        return connection.getObject(new GetObjectRequest(bucketName, path)).getObjectMetadata().getETag();
     }
 
     public Map<String, String> getObjectMetadata(String path) {

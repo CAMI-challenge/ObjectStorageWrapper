@@ -3,7 +3,12 @@ package cami.objectstoragewrapper.aws;
 import cami.objectstoragewrapper.core.IFile;
 import cami.objectstoragewrapper.core.IFileManager;
 import cami.objectstoragewrapper.core.S3Link;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.auth.profile.ProfilesConfigFile;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
@@ -13,16 +18,43 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
+import java.util.logging.Logger;
 
 public class AWSFileManager implements IFileManager {
-    private AmazonS3 connection;
-    private String bucketName;
-    private final static String FOLDER_SUFFIX = "/";
-    private final static String MD5_KEY = "fingerprint";
+    private static final String FOLDER_SUFFIX = "/";
+    private static final String MD5_KEY = "fingerprint";
+    private static final String HTTPS_HOST = "https.proxyHost";
+    private static final String HTTPS_PORT = "https.proxyPort";
 
-    public AWSFileManager(AmazonS3 lConnection, String lBucketName) {
-        this.connection = lConnection;
-        this.bucketName = lBucketName;
+    private final AmazonS3 connection;
+    private final String bucketName;
+
+    public AWSFileManager(String bucketName) {
+        this.bucketName = bucketName;
+        String httpsHost = System.getProperty(HTTPS_HOST);
+        String httpsPort = System.getProperty(HTTPS_PORT);
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        if (httpsHost != null && httpsPort != null) {
+            Logger.getAnonymousLogger().info(httpsHost);
+            Logger.getAnonymousLogger().info(httpsPort);
+            clientConfiguration.setProxyHost(httpsHost);
+            clientConfiguration.setProxyPort(Integer.parseInt(httpsPort));
+        }
+        connection = new AmazonS3Client(new EnvironmentVariableCredentialsProvider(), clientConfiguration);
+    }
+
+    public AWSFileManager(String bucketName, String credentialsPath, String profile) {
+        this.bucketName = bucketName;
+        String httpsHost = System.getProperty(HTTPS_HOST);
+        String httpsPort = System.getProperty(HTTPS_PORT);
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        if (httpsHost != null && httpsPort != null) {
+            Logger.getAnonymousLogger().info(httpsHost);
+            Logger.getAnonymousLogger().info(httpsPort);
+            clientConfiguration.setProxyHost(httpsHost);
+            clientConfiguration.setProxyPort(Integer.parseInt(httpsPort));
+        }
+        connection = new AmazonS3Client(new ProfileCredentialsProvider(new ProfilesConfigFile(credentialsPath), profile), clientConfiguration);
     }
 
     public void createDirs(String path) {

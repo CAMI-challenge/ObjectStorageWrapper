@@ -6,10 +6,10 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import java.util.Date;
 
 public class AWSFile implements IFile {
-    private Date timestamp;
-    private S3ObjectSummary summary;
-    private String key;
-    private String name;
+    private final Date timestamp;
+    private final S3ObjectSummary summary;
+    private final String key;
+    private final String name;
 
     protected AWSFile(S3ObjectSummary lSummary, String lKey) {
         this.summary = lSummary;

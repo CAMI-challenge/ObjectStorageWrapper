@@ -1,45 +1,48 @@
 package cami.objectstoragewrapper.main;
 
+import cami.objectstoragewrapper.aws.AWSFileManager;
 import cami.objectstoragewrapper.core.IFileManager;
+import cami.objectstoragewrapper.swift.SwiftFileManager;
 
 public final class FileManagerFactory {
-    public final static String HTTPS_HOST = "https.proxyHost";
-    public final static String HTTPS_PORT = "https.proxyPort";
-    public final static String DELIMITER = "/";
-
     private FileManagerFactory() {
     }
 
-    public static IFileManager getAWSManager(String credentialsPath, String profile, String bucketName) {
-        /*
-        String httpsHost = System.getProperty(HTTPS_HOST);
-        String httpsPort = System.getProperty(HTTPS_PORT);
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        if (httpsHost != null && httpsPort != null) {
-            Logger.getAnonymousLogger().info(httpsHost);
-            Logger.getAnonymousLogger().info(httpsPort);
-            clientConfiguration.setProxyHost(httpsHost);
-            clientConfiguration.setProxyPort(Integer.parseInt(httpsPort));
-        }
-        AmazonS3 s3Client = new AmazonS3Client(new ProfileCredentialsProvider(new ProfilesConfigFile(credentialsPath), profile),
-                clientConfiguration);
-        return new AWSFileManager(s3Client, bucketName);
-        */
-        return null;
+    /**
+     * Create a new AWS file manager instance with environment variable credentials.
+     *
+     * @param bucketName The bucket associated with the file manager.
+     * @return {@link AWSFileManager} instance
+     */
+    public static IFileManager getAWSManager(String bucketName) {
+        return new AWSFileManager(bucketName);
     }
 
-    public static IFileManager getAWSManager(String bucketName) {
-        /*
-        String httpsHost = System.getProperty(HTTPS_HOST);
-        String httpsPort = System.getProperty(HTTPS_PORT);
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        if (httpsHost != null && httpsPort != null) {
-            clientConfiguration.setProxyHost(httpsHost);
-            clientConfiguration.setProxyPort(Integer.parseInt(httpsPort));
-        }
-        AmazonS3 s3Client = new AmazonS3Client(new EnvironmentVariableCredentialsProvider(), clientConfiguration);
-        return new AWSFileManager(s3Client, bucketName);
-        */
-        return null;
+    /**
+     * Create a new AWS file manager instance with file based credentials and profile.
+     *
+     * @param bucketName      The bucket associated with the file manager.
+     * @param credentialsPath AWS credentials file path for authentication.
+     * @param profile         The credentials profile.
+     * @return {@link AWSFileManager} instance
+     */
+    public static IFileManager getAWSManager(String bucketName, String credentialsPath, String profile) {
+        return new AWSFileManager(bucketName, credentialsPath, profile);
+    }
+
+    /**
+     * Create a new Swift file manager instance with the provided credentials.
+     *
+     * @param bucketName The bucket associated with the file manager.
+     * @param username   Authentication username.
+     * @param password   Authentication password.
+     * @param url        Authentication url.
+     * @param projectId  Project the bucket was created in.
+     * @param domain     Project domain.
+     * @return {@link SwiftFileManager} instance
+     */
+    public static IFileManager getSwiftManager(String bucketName, String username, String password, String url,
+                                               String projectId, String domain) {
+        return new SwiftFileManager(bucketName, username, password, url, projectId, domain);
     }
 }

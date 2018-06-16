@@ -31,9 +31,9 @@ public class SwiftFileManager implements IFileManager {
     private String bucketName;
     private OSClient.OSClientV3 os;
 
-    public SwiftFileManager(String lBucketName, String username, String password, String url,
+    public SwiftFileManager(String bucketName, String username, String password, String url,
                             String projectId, String domain) {
-        bucketName = lBucketName;
+        this.bucketName = bucketName;
         OSFactory.enableHttpLoggingFilter(true);
         os = OSFactory.builderV3()
                 .endpoint(url)

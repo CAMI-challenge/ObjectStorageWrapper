@@ -1,5 +1,6 @@
 # ObjectStorageWrapper
 
+[![](https://jitpack.io/v/pbelmann/ObjectStorageWrapper.svg)](https://jitpack.io/#pbelmann/ObjectStorageWrapper)
 
 ## Compile, Build & Package
 

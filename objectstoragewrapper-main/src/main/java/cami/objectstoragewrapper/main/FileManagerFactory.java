@@ -19,6 +19,17 @@ public final class FileManagerFactory {
     }
 
     /**
+     * Create a new AWS file manager instance with file based credentials.
+     *
+     * @param bucketName      The bucket associated with the file manager.
+     * @param credentialsPath AWS credentials file path for authentication.
+     * @return {@link AWSFileManager} instance
+     */
+    public static IFileManager getAWSManager(String bucketName, String credentialsPath) throws Exception {
+        return new AWSFileManager(bucketName, credentialsPath);
+    }
+
+    /**
      * Create a new AWS file manager instance with file based credentials and profile.
      *
      * @param bucketName      The bucket associated with the file manager.

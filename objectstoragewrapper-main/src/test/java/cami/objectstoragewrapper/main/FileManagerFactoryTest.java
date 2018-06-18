@@ -15,13 +15,18 @@ public class FileManagerFactoryTest {
     private static final String TEST_SIGNATURE = "test-signature";
 
     @Test
-    public void testSwiftFileManager() throws IOException {
-        final String bucket = "";
+    public void testSwiftFileManager() throws Exception {
+        final String bucket = "ceph_api_test";
         final String username = "";
         final String password = "";
-        IFileManager fileManager = FileManagerFactory.getSwiftManager(bucket, username, password,
-                "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "3727bc448db74d748e72a03c5cdbcd72",
-                "Default");
+        IFileManager fileManager = null;
+        if (false) {
+            FileManagerFactory.getSwiftManager(bucket, username, password,
+                    "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "3727bc448db74d748e72a03c5cdbcd72",
+                    "Default");
+        } else {
+            fileManager = FileManagerFactory.getAWSManager(bucket, "D:\\.openstack.s3.properties");
+        }
 
         fileManager.createDirs(TEST_FOLDER);
         assertTrue(pathExists(fileManager, TEST_FOLDER));

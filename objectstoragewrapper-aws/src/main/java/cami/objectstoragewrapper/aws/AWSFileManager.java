@@ -4,9 +4,13 @@ import cami.objectstoragewrapper.core.IFile;
 import cami.objectstoragewrapper.core.IFileManager;
 import cami.objectstoragewrapper.core.S3Link;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfilesConfigFile;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
@@ -15,8 +19,10 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -43,6 +49,31 @@ public class AWSFileManager implements IFileManager {
         connection = AmazonS3Client.builder()
                 .withClientConfiguration(clientConfiguration)
                 .withCredentials(new EnvironmentVariableCredentialsProvider())
+                .build();
+    }
+
+    public AWSFileManager(String bucketName, String credentialsPath) throws Exception {
+        this.bucketName = bucketName;
+        String httpsHost = System.getProperty(HTTPS_HOST);
+        String httpsPort = System.getProperty(HTTPS_PORT);
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        if (httpsHost != null && httpsPort != null) {
+            Logger.getAnonymousLogger().info(httpsHost);
+            Logger.getAnonymousLogger().info(httpsPort);
+            clientConfiguration.setProxyHost(httpsHost);
+            clientConfiguration.setProxyPort(Integer.parseInt(httpsPort));
+        }
+        AWSCredentials credentials;
+        try {
+            credentials = new PropertiesCredentials(Paths.get(credentialsPath).toFile());
+        } catch (IOException | IllegalArgumentException e) {
+            throw new Exception("AWS credentials file could not be loaded.", e);
+        }
+        connection = AmazonS3Client.builder()
+                .withClientConfiguration(clientConfiguration)
+                .withCredentials(new AWSStaticCredentialsProvider(credentials))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "Bielefeld"))
                 .build();
     }
 

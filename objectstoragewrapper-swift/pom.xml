@@ -21,7 +21,7 @@
         <dependency> <!-- okhttp -->
             <groupId>org.pacesys.openstack4j.connectors</groupId>
             <artifactId>openstack4j-okhttp</artifactId>
-            <version>3.0.2</version>
+            <version>3.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.pacesys</groupId>

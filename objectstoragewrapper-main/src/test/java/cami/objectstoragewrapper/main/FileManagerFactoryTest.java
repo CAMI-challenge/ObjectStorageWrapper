@@ -25,7 +25,8 @@ public class FileManagerFactoryTest {
                     "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "3727bc448db74d748e72a03c5cdbcd72",
                     "Default");
         } else {
-            fileManager = FileManagerFactory.getAWSManager(bucket, "D:\\.openstack.s3.properties");
+            fileManager = FileManagerFactory.getAWSManager(bucket, "D:\\.openstack.s3.properties",
+                    "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "Bielefeld");
         }
 
         fileManager.createDirs(TEST_FOLDER);

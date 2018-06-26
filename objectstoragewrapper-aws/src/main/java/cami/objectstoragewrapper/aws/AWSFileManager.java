@@ -52,7 +52,7 @@ public class AWSFileManager implements IFileManager {
                 .build();
     }
 
-    public AWSFileManager(String bucketName, String credentialsPath) throws Exception {
+    public AWSFileManager(String bucketName, String credentialsPath, String endpoint, String region) throws Exception {
         this.bucketName = bucketName;
         String httpsHost = System.getProperty(HTTPS_HOST);
         String httpsPort = System.getProperty(HTTPS_PORT);
@@ -72,8 +72,7 @@ public class AWSFileManager implements IFileManager {
         connection = AmazonS3Client.builder()
                 .withClientConfiguration(clientConfiguration)
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "Bielefeld"))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, region))
                 .build();
     }
 

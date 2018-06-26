@@ -23,10 +23,13 @@ public final class FileManagerFactory {
      *
      * @param bucketName      The bucket associated with the file manager.
      * @param credentialsPath AWS credentials file path for authentication.
+     * @param endpoint        S3 endpoint to use.
+     * @param region          Region to use.
      * @return {@link AWSFileManager} instance
      */
-    public static IFileManager getAWSManager(String bucketName, String credentialsPath) throws Exception {
-        return new AWSFileManager(bucketName, credentialsPath);
+    public static IFileManager getAWSManager(String bucketName, String credentialsPath, String endpoint, String region)
+            throws Exception {
+        return new AWSFileManager(bucketName, credentialsPath, endpoint, region);
     }
 
     /**

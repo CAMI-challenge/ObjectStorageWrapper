@@ -4,6 +4,7 @@ import cami.objectstoragewrapper.core.IFile;
 import cami.objectstoragewrapper.core.IFileManager;
 import cami.objectstoragewrapper.core.S3Link;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
@@ -57,6 +58,7 @@ public class AWSFileManager implements IFileManager {
         String httpsHost = System.getProperty(HTTPS_HOST);
         String httpsPort = System.getProperty(HTTPS_PORT);
         ClientConfiguration clientConfiguration = new ClientConfiguration();
+        clientConfiguration.setSignerOverride("AWS3SignerType");
         if (httpsHost != null && httpsPort != null) {
             Logger.getAnonymousLogger().info(httpsHost);
             Logger.getAnonymousLogger().info(httpsPort);
@@ -176,6 +178,6 @@ public class AWSFileManager implements IFileManager {
         c.setTime(date);
         c.add(Calendar.DATE, 1);
         date = c.getTime();
-        return connection.generatePresignedUrl(link.getBucket(), link.getKey(), date);
+        return connection.generatePresignedUrl(link.getBucket(), link.getKey(), date, HttpMethod.PUT);
     }
 }

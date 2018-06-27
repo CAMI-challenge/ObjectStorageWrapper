@@ -5,6 +5,7 @@ import cami.objectstoragewrapper.core.IFileManager;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URL;
 
 import static org.junit.Assert.*;
 
@@ -20,14 +21,14 @@ public class FileManagerFactoryTest {
         final String username = "";
         final String password = "";
         IFileManager fileManager = null;
-        if (false) {
-            FileManagerFactory.getSwiftManager(bucket, username, password,
-                    "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "3727bc448db74d748e72a03c5cdbcd72",
-                    "Default");
-        } else {
-            fileManager = FileManagerFactory.getAWSManager(bucket, "D:\\.openstack.s3.properties",
-                    "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "Bielefeld");
-        }
+        //fileManager = FileManagerFactory.getSwiftManager(bucket, username, password,
+        //        "https://openstack.cebitec.uni-bielefeld.de:5000/v3/", "3727bc448db74d748e72a03c5cdbcd72",
+        //        "Default");
+        fileManager = FileManagerFactory.getAWSManager(bucket, "D:\\.openstack.s3.properties",
+                "https://openstack.cebitec.uni-bielefeld.de:8080", "Bielefeld");
+
+        URL url = fileManager.generateUrl("s3://" + bucket + "/file.txt");
+        System.out.println(url);
 
         fileManager.createDirs(TEST_FOLDER);
         assertTrue(pathExists(fileManager, TEST_FOLDER));

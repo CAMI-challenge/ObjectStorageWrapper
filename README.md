@@ -9,5 +9,5 @@
 ~~~BASH
 > git clone https://github.com/pbelmann/ObjectStorageWrapper.git
 > cd ObjectStorageWrapper
-> mvn clean package
+> mvn clean package 
 ~~~

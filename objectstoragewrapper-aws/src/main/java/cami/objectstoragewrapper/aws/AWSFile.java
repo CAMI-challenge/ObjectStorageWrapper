@@ -15,10 +15,17 @@ public class AWSFile implements IFile {
         this.summary = lSummary;
         this.key = lKey;
 
+	/* In test cases, lkey is always passed in as null string, therefore substring below always fails
+	Need to handle case where key is a directory */
+
         String wholeKey = summary.getKey();
-        String name = wholeKey.substring(key.length() - 1);
+	String name = wholeKey;
+	if (wholeKey.substring(key.length() - 1) == "/") {
+        	name = wholeKey.substring(0, key.length() - 1);
+	}
         String[] names = name.split("/");
-        this.name = names[1];
+        this.name = names[names.length - 1];
+
         this.timestamp = lSummary.getLastModified();
     }
 

@@ -12,7 +12,11 @@ public class S3Link {
     public S3Link(String s3Link) {
         String[] s3LinkSplit = s3Link.split("/", 4);
         this.bucket = s3LinkSplit[2];
-        this.key = s3LinkSplit[3];
+	if (s3LinkSplit.length == 4) {
+          this.key = s3LinkSplit[3]; 
+	} else {
+          this.key = ""; 
+	}
     }
 
     public String getBucket() {

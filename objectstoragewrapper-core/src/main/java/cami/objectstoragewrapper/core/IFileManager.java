@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+
 public interface IFileManager {
     void createDirs(String path);
 
@@ -27,4 +28,25 @@ public interface IFileManager {
     void downloadFile(String s3Link, File file);
 
     URL generateUrl(String s3Link);
+
+    void setFileReadonlyACL(String bucketName, String keyName);
+
+    void setFilePublicACL(String bucketName, String keyName);
+
+    void setBucketReadonlyACL(String bucketName);
+
+    void setBucketReadwriteACL(String bucketName);
+
+    void setBucketPublicACL(String bucketName);
+
+    void createBucket(String bucketName);
+
+    void copyBucketContents(String sourceBucketName, String targetBucketName);
+
+    void deleteBucket(String bucketName);
+
+    void setBucketContentsFullcontrolACL(String bucketName);
+
+    String getConnectionId();
+
 }

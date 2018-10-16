@@ -55,13 +55,13 @@ public class FileManagerFactoryTest {
         IFileManager fileManager4 = null;
         IFileManager fileManager5 = null;
 
-        fileManager = FileManagerFactory.getAWSManager(bucket, "/home/gary/git/ObjectStorageWrapper/openstack.s3.properties",
+        fileManager = FileManagerFactory.getAWSManager(bucket, "/home/gary/git/openstack.s3.properties",
                 "https://openstack.cebitec.uni-bielefeld.de:8080", "Bielefeld");
-        fileManager2 = FileManagerFactory.getAWSManager(bucket2, "/home/gary/git/ObjectStorageWrapper/openstack.s3.properties",
+        fileManager2 = FileManagerFactory.getAWSManager(bucket2, "/home/gary/git/openstack.s3.properties",
                 "https://openstack.cebitec.uni-bielefeld.de:8080", "Bielefeld");
-        fileManager3 = FileManagerFactory.getAWSManager(bucket3, "/home/gary/git/ObjectStorageWrapper/openstack.s3.properties",
+        fileManager3 = FileManagerFactory.getAWSManager(bucket3, "/home/gary/git/openstack.s3.properties",
                 "https://openstack.cebitec.uni-bielefeld.de:8080", "Bielefeld");
-        fileManager4 = FileManagerFactory.getAWSManager("newbucket", "/home/gary/git/ObjectStorageWrapper/openstack.s3.properties", "https://openstack.cebitec.uni-bielefeld.de:8080", "Bielefeld");
+        fileManager4 = FileManagerFactory.getAWSManager("newbucket", "/home/gary/git/openstack.s3.properties", "https://openstack.cebitec.uni-bielefeld.de:8080", "Bielefeld");
         fileManager5 = FileManagerFactory.getAWSManager("newbucket", "https://openstack.cebitec.uni-bielefeld.de:8080", "Bielefeld");
 
         URL url = fileManager.generateUrl("s3://" + bucket + "/file.txt");
@@ -76,7 +76,7 @@ public class FileManagerFactoryTest {
         // Test files upload with and without signature
         ClassLoader classLoader = getClass().getClassLoader();
 
-	fileManager4.createBucket("newbucket");a
+	fileManager4.createBucket("newbucket");
 
 	// S3 ACLs don't work properly for Swift
 	// fileManager4.setBucketPublicACL("newbucket");

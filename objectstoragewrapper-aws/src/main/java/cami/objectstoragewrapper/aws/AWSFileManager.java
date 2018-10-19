@@ -43,6 +43,14 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.util.Formatter;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 // Clashing when run through webFramework
 
 // import org.apache.log4j.Logger;
@@ -60,6 +68,21 @@ public class AWSFileManager implements IFileManager {
     private static final String MD5_KEY = "fingerprint";
     private static final String HTTPS_HOST = "https.proxyHost";
     private static final String HTTPS_PORT = "https.proxyPort";
+
+    // config.()
+    private static final Long LINK_EXPIRY = 86400; // seconds == 60 * 60 * 24
+    // config.()
+    private static final Long LINK_KEY = "TestKey123789";
+    // config.()
+    private final static String PROTOCOL = "https://";
+    // config.()
+    private final static String HOST = "openstack.cebitec.uni-bielefeld.de";
+    // config.()
+    private final static String PORT = "8080";
+    // config.()
+    private final static String LINK_METHOD = "PUT";
+
+    private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 
     private final AmazonS3 connection;
     private final String bucketName;
@@ -313,6 +336,42 @@ public class AWSFileManager implements IFileManager {
 	// generatePresignedUrlRequest.setMethod(HttpMethod.POST);
 
         return connection.generatePresignedUrl(generatePresignedUrlRequest);
+    }
+
+    private static String toHexString(byte[] bytes) {
+        Formatter formatter = new Formatter();
+    
+        for (byte b : bytes) {
+    	formatter.format("%02x", b);
+        }
+    
+        return formatter.toString();
+    }
+    
+    private static String calculateRFC2104HMAC(String data, String key)
+        throws SignatureException, NoSuchAlgorithmException, InvalidKeyException
+    {
+        SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
+        Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+        mac.init(signingKey);
+        return toHexString(mac.doFinal(data.getBytes()));
+    }
+
+    @Override
+    public URL generateSwiftUrl(String link) {
+
+	Long expires = (System.currentTimeMillis()/1000) + LINK_EXPIRY;
+
+	String hmacBody = LINK_METHOD+"\n"+LINK_EXPIRY+"\n"+link;
+
+	GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(link.getBucket(), link.getKey());
+	generatePresignedUrlRequest.setExpiration(date);
+
+        String hmac = calculateRFC2104HMAC(hmacBody, LINK_KEY);
+
+	String url = PROTOCOL+HOST+":"+PORT+DELIM+link+"?temp_url_sig="+hmac+"&temp_url_expires="expires
+
+	return url;
     }
 
     public void copyBucketContents(String sourceBucketName, String targetBucketName) {

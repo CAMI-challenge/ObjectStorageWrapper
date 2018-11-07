@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
@@ -69,18 +70,19 @@ public class AWSFileManager implements IFileManager {
     private static final String HTTPS_HOST = "https.proxyHost";
     private static final String HTTPS_PORT = "https.proxyPort";
 
-    // config.()
-    private static final Long LINK_EXPIRY = 86400; // seconds == 60 * 60 * 24
-    // config.()
-    private static final Long LINK_KEY = "TestKey123789";
-    // config.()
+    // following all need to go into config()
+    private static final String DELIM = "/";
+    // private static final long LINK_EXPIRY = 86400; // seconds == 60 * 60 * 24
+    private static final long LINK_EXPIRY = 60;
+    // swift post -m "Temp-Url-Key:TestKey123789" 
+    // swift post -m "X-Container-Meta-Temp-Url-Key:TestKey123789" 
+    // swift post -m "X-Account-Meta-Temp-Url-Key:TestKey123789" 
+    private static final String LINK_KEY = "TestKey123789";
     private final static String PROTOCOL = "https://";
-    // config.()
     private final static String HOST = "openstack.cebitec.uni-bielefeld.de";
-    // config.()
     private final static String PORT = "8080";
-    // config.()
-    private final static String LINK_METHOD = "PUT";
+    // private final static String LINK_METHOD = "PUT";
+    private final static String LINK_METHOD = "GET";
 
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 
@@ -358,19 +360,21 @@ public class AWSFileManager implements IFileManager {
     }
 
     @Override
-    public URL generateSwiftUrl(String link) {
+    public String generateSwiftURL(String link) throws Exception {
 
-	Long expires = (System.currentTimeMillis()/1000) + LINK_EXPIRY;
+	long expires = (System.currentTimeMillis()/1000) + LINK_EXPIRY;
 
-	String hmacBody = LINK_METHOD+"\n"+LINK_EXPIRY+"\n"+link;
+	String hmacBody = LINK_METHOD+"\n"+expires+"\n"+link;
 
-	GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(link.getBucket(), link.getKey());
-	generatePresignedUrlRequest.setExpiration(date);
-
-        String hmac = calculateRFC2104HMAC(hmacBody, LINK_KEY);
-
-	String url = PROTOCOL+HOST+":"+PORT+DELIM+link+"?temp_url_sig="+hmac+"&temp_url_expires="expires
-
+	String hmac;
+        try {
+            hmac = calculateRFC2104HMAC(hmacBody, LINK_KEY);
+        } catch (SignatureException | NoSuchAlgorithmException e) {
+            throw new Exception("Could not calculate the HMAC.", e);
+        }
+	
+	String url = PROTOCOL+HOST+":"+PORT+link+"?temp_url_sig="+hmac+"&temp_url_expires="+expires;
+	
 	return url;
     }
 

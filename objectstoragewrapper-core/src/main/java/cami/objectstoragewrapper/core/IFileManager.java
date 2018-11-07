@@ -49,4 +49,6 @@ public interface IFileManager {
 
     String getConnectionId();
 
+    String generateSwiftURL(String link) throws Exception;
+
 }

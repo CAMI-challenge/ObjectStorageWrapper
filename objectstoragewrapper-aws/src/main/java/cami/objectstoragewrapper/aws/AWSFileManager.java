@@ -189,7 +189,10 @@ public class AWSFileManager implements IFileManager {
     }
 
     public List<String> listFileNames(String path) {
+    	return listFileNames(this.bucketName, path);
+    }
 
+    public List<String> listFileNames(String bucketName, String path) {
 	// path = "test/";
 
 	int pathLength = path.length();
@@ -222,6 +225,10 @@ public class AWSFileManager implements IFileManager {
     }
 
     public void uploadFile(String path, InputStream stream, Long length) {
+    	uploadFile(this.bucketName, path, stream, length);
+    }
+
+    public void uploadFile(String bucketName, String path, InputStream stream, Long length) {
         ObjectMetadata data = new ObjectMetadata();
         data.setContentLength(length);
         connection.putObject(new PutObjectRequest(bucketName, path, stream, data));

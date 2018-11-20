@@ -15,7 +15,11 @@ public interface IFileManager {
 
     List<String> listFileNames(String path);
 
+    List<String> listFileNames(String bucketName, String path);
+
     void delete(String path);
+
+    void uploadFile(String bucketName, String path, InputStream stream, Long length);
 
     void uploadFile(String path, InputStream stream, Long length);
 

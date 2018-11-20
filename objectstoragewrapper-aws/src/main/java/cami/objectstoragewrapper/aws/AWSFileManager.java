@@ -70,20 +70,6 @@ public class AWSFileManager implements IFileManager {
     private static final String HTTPS_HOST = "https.proxyHost";
     private static final String HTTPS_PORT = "https.proxyPort";
 
-    // following all need to go into config()
-    private static final String DELIM = "/";
-    // private static final long LINK_EXPIRY = 86400; // seconds == 60 * 60 * 24
-    private static final long LINK_EXPIRY = 60;
-    // swift post -m "Temp-Url-Key:TestKey123789" 
-    // swift post -m "X-Container-Meta-Temp-Url-Key:TestKey123789" 
-    // swift post -m "X-Account-Meta-Temp-Url-Key:TestKey123789" 
-    private static final String LINK_KEY = "TestKey123789";
-    private final static String PROTOCOL = "https://";
-    private final static String HOST = "openstack.cebitec.uni-bielefeld.de";
-    private final static String PORT = "8080";
-    // private final static String LINK_METHOD = "PUT";
-    private final static String LINK_METHOD = "GET";
-
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 
     private final AmazonS3 connection;
@@ -192,6 +178,39 @@ public class AWSFileManager implements IFileManager {
 		    	// log4Jlogger.debug(path);
 	            	// Logger.getAnonymousLogger().log(Level.SEVERE, objectSummary.getKey());
                     	set.add(new AWSFile(objectSummary, objectSummary.getKey()));
+                }
+            }
+            objects = connection.listNextBatchOfObjects(objects);
+            // Clashing when run through webFramework
+            // Logger.getAnonymousLogger().log(Level.SEVERE, "LOOP");
+
+        } while (objects.isTruncated());
+        return new ArrayList<>(set);
+    }
+
+    public List<String> listFileNames(String path) {
+
+	// path = "test/";
+
+	int pathLength = path.length();
+
+        ListObjectsRequest request = new ListObjectsRequest();
+        request.setBucketName(bucketName);
+	request.setPrefix(path);
+        ObjectListing objects = connection.listObjects(request);
+        Set<String> set = new HashSet<>();
+
+        // Clashing when run through webFramework
+        Logger.getAnonymousLogger().setLevel(Level.SEVERE);
+
+        do {
+            for (S3ObjectSummary objectSummary : objects.getObjectSummaries()) {
+                // filter out root
+                if (!objectSummary.getKey().equals(path)) {
+        	   	// Clashing when run through webFramework
+		    	// log4Jlogger.debug(path);
+	            	// Logger.getAnonymousLogger().log(Level.SEVERE, objectSummary.getKey());
+                    	set.add(new AWSFile(objectSummary, objectSummary.getKey()).getPath().substring(pathLength));
                 }
             }
             objects = connection.listNextBatchOfObjects(objects);
@@ -360,21 +379,20 @@ public class AWSFileManager implements IFileManager {
     }
 
     @Override
-    public String generateSwiftURL(String link) throws Exception {
+    public String generateSwiftURL(String link_method, long link_expiry, String link_key, String delim, String protocol, String host, String port, String link) throws Exception {
 
-	long expires = (System.currentTimeMillis()/1000) + LINK_EXPIRY;
+	long expires = (System.currentTimeMillis()/1000) + link_expiry;
 
-	String hmacBody = LINK_METHOD+"\n"+expires+"\n"+link;
+	String hmacBody = link_method+"\n"+expires+"\n"+link;
 
 	String hmac;
         try {
-            hmac = calculateRFC2104HMAC(hmacBody, LINK_KEY);
+            hmac = calculateRFC2104HMAC(hmacBody, link_key);
         } catch (SignatureException | NoSuchAlgorithmException e) {
             throw new Exception("Could not calculate the HMAC.", e);
         }
 	
-	String url = PROTOCOL+HOST+":"+PORT+link+"?temp_url_sig="+hmac+"&temp_url_expires="+expires;
-	
+	String url = protocol+host+":"+port+link+"?temp_url_sig="+hmac+"&temp_url_expires="+expires;
 	return url;
     }
 

@@ -13,6 +13,8 @@ public interface IFileManager {
 
     List<IFile> list(String path);
 
+    List<String> listFileNames(String path);
+
     void delete(String path);
 
     void uploadFile(String path, InputStream stream, Long length);
@@ -49,6 +51,6 @@ public interface IFileManager {
 
     String getConnectionId();
 
-    String generateSwiftURL(String link) throws Exception;
+    String generateSwiftURL(String link_method, long link_expiry, String link_key, String delim, String protocol, String host, String port, String link) throws Exception;
 
 }

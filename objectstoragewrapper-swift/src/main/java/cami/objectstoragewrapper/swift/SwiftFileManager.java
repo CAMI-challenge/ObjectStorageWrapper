@@ -164,9 +164,23 @@ public class SwiftFileManager implements IFileManager {
     public void setBucketContentsFullcontrolACL(String bucketName) {
     }
 
-   public String getConnectionId() {
+    public String getConnectionId() {
 	return "";
-   }
+    }
 
+    public String generateSwiftURL(String link_method, long link_expiry, String link_key, String delim, String protocol, String host, String port, String link) {
+	return "";
+    }
+
+    public List<String> listFileNames(String bucketName, String path) {
+        return new ArrayList<>();
+    }
+
+    public List<String> listFileNames(String path) {
+        return new ArrayList<>();
+    }
+
+    public void uploadFile(String bucketName, String path, InputStream stream, Long length) {
+    }
 
 }

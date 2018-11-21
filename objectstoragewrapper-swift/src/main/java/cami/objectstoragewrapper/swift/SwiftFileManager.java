@@ -20,7 +20,6 @@ import org.openstack4j.model.common.Payloads;
 import org.openstack4j.model.storage.object.options.ObjectListOptions;
 import org.openstack4j.model.storage.object.options.ObjectPutOptions;
 import org.openstack4j.openstack.OSFactory;
-
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -135,4 +134,53 @@ public class SwiftFileManager implements IFileManager {
         }
         return formatter.toString();
     }
+
+
+    // stubbed out for interface compliance
+    public void setFileReadonlyACL(String bucketName, String keyName) {
+    }
+
+    public void setFilePublicACL(String bucketName, String keyName) {
+    }
+
+    public void setBucketReadonlyACL(String bucketName) {
+    }
+
+    public void setBucketReadwriteACL(String bucketName) {
+    }
+
+    public void setBucketPublicACL(String bucketName) {
+    }
+
+    public void createBucket(String bucketName) {
+    }
+
+    public void copyBucketContents(String sourceBucketName, String targetBucketName) {
+    }
+
+    public void deleteBucket(String bucketName) {
+    }
+
+    public void setBucketContentsFullcontrolACL(String bucketName) {
+    }
+
+    public String getConnectionId() {
+	return "";
+    }
+
+    public String generateSwiftURL(String link_method, long link_expiry, String link_key, String delim, String protocol, String host, String port, String link) {
+	return "";
+    }
+
+    public List<String> listFileNames(String bucketName, String path) {
+        return new ArrayList<>();
+    }
+
+    public List<String> listFileNames(String path) {
+        return new ArrayList<>();
+    }
+
+    public void uploadFile(String bucketName, String path, InputStream stream, Long length) {
+    }
+
 }

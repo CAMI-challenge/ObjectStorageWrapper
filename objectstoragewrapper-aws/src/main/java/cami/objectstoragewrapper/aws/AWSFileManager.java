@@ -17,15 +17,52 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
+// for test implementation of AWS temporary tokens
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
+import com.amazonaws.services.securitytoken.model.GetSessionTokenRequest;
+import com.amazonaws.services.securitytoken.model.GetSessionTokenResult;
+import com.amazonaws.services.securitytoken.model.Credentials;
+import com.amazonaws.auth.STSSessionCredentialsProvider;
+import com.amazonaws.auth.STSSessionCredentials;
+import com.amazonaws.auth.BasicSessionCredentials;
+// for test implmentation of ACLs 
+import com.amazonaws.services.s3.model.CanonicalGrantee;
+import com.amazonaws.services.s3.model.Grant;
+import com.amazonaws.services.s3.model.AccessControlList;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.CopyObjectRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.util.Formatter;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+// Clashing when run through webFramework
+
+// import org.apache.log4j.Logger;
+// import org.apache.log4j.LogManager;
+// import org.apache.log4j.BasicConfigurator;
+
+
+
+
+
+
 
 public class AWSFileManager implements IFileManager {
     private static final String FOLDER_SUFFIX = "/";
@@ -33,10 +70,17 @@ public class AWSFileManager implements IFileManager {
     private static final String HTTPS_HOST = "https.proxyHost";
     private static final String HTTPS_PORT = "https.proxyPort";
 
+    private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
+
     private final AmazonS3 connection;
     private final String bucketName;
 
-    public AWSFileManager(String bucketName) {
+    // Clashing when run through webFramework
+
+    // private static org.apache.log4j.Logger log4Jlogger =
+    // org.apache.log4j.LogManager.getLogger( AWSFileManager.class );
+
+    public AWSFileManager(String bucketName, String endpoint, String region) {
         this.bucketName = bucketName;
         String httpsHost = System.getProperty(HTTPS_HOST);
         String httpsPort = System.getProperty(HTTPS_PORT);
@@ -49,7 +93,8 @@ public class AWSFileManager implements IFileManager {
         }
         connection = AmazonS3Client.builder()
                 .withClientConfiguration(clientConfiguration)
-                .withCredentials(new EnvironmentVariableCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, region))
+                .withPathStyleAccessEnabled(true)
                 .build();
     }
 
@@ -58,7 +103,7 @@ public class AWSFileManager implements IFileManager {
         String httpsHost = System.getProperty(HTTPS_HOST);
         String httpsPort = System.getProperty(HTTPS_PORT);
         ClientConfiguration clientConfiguration = new ClientConfiguration();
-        clientConfiguration.setSignerOverride("AWS3SignerType");
+        // use default signer type - specifying v3 or v4 causes trouble
         if (httpsHost != null && httpsPort != null) {
             Logger.getAnonymousLogger().info(httpsHost);
             Logger.getAnonymousLogger().info(httpsPort);
@@ -71,28 +116,35 @@ public class AWSFileManager implements IFileManager {
         } catch (IOException | IllegalArgumentException e) {
             throw new Exception("AWS credentials file could not be loaded.", e);
         }
+
+// Test code for AWS temporary sessions
+
+/*
+	AWSSecurityTokenServiceClient sts_client = new AWSSecurityTokenServiceClient(credentials);
+	sts_client.setEndpoint(endpoint);
+	GetSessionTokenRequest session_token_request = new GetSessionTokenRequest();
+	session_token_request.setDurationSeconds(7200); // optional.
+
+	GetSessionTokenResult session_token_result = sts_client.getSessionToken(session_token_request);
+	Credentials session_creds = session_token_result.getCredentials();
+
+	BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(
+   	session_creds.getAccessKeyId(),
+   	session_creds.getSecretAccessKey(),
+   	session_creds.getSessionToken());
+*/
+
         connection = AmazonS3Client.builder()
                 .withClientConfiguration(clientConfiguration)
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
                 .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, region))
+                .withPathStyleAccessEnabled(true)
                 .build();
-    }
 
-    public AWSFileManager(String bucketName, String credentialsPath, String profile) {
-        this.bucketName = bucketName;
-        String httpsHost = System.getProperty(HTTPS_HOST);
-        String httpsPort = System.getProperty(HTTPS_PORT);
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        if (httpsHost != null && httpsPort != null) {
-            Logger.getAnonymousLogger().info(httpsHost);
-            Logger.getAnonymousLogger().info(httpsPort);
-            clientConfiguration.setProxyHost(httpsHost);
-            clientConfiguration.setProxyPort(Integer.parseInt(httpsPort));
-        }
-        connection = AmazonS3Client.builder()
-                .withClientConfiguration(clientConfiguration)
-                .withCredentials(new ProfileCredentialsProvider(new ProfilesConfigFile(credentialsPath), profile))
-                .build();
+		// Test code for AWS temporary sessions
+
+                // .withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
+
     }
 
     public void createDirs(String path) {
@@ -114,22 +166,138 @@ public class AWSFileManager implements IFileManager {
         request.withPrefix(path).withDelimiter(path);
         ObjectListing objects = connection.listObjects(request);
         Set<IFile> set = new HashSet<>();
+
+        // Clashing when run through webFramework
+        Logger.getAnonymousLogger().setLevel(Level.SEVERE);
+
         do {
             for (S3ObjectSummary objectSummary : objects.getObjectSummaries()) {
                 // filter out root
                 if (!objectSummary.getKey().equals(path)) {
-                    set.add(new AWSFile(objectSummary, path));
+        	   	// Clashing when run through webFramework
+		    	// log4Jlogger.debug(path);
+	            	// Logger.getAnonymousLogger().log(Level.SEVERE, objectSummary.getKey());
+                    	set.add(new AWSFile(objectSummary, objectSummary.getKey()));
                 }
             }
             objects = connection.listNextBatchOfObjects(objects);
+            // Clashing when run through webFramework
+            // Logger.getAnonymousLogger().log(Level.SEVERE, "LOOP");
+
+        } while (objects.isTruncated());
+        return new ArrayList<>(set);
+    }
+
+    public List<String> listFileNames(String path) {
+    	return listFileNames(this.bucketName, path);
+    }
+
+    public List<String> listFileNames(String bucketName, String path) {
+	// path = "test/";
+
+	int pathLength = path.length();
+
+        ListObjectsRequest request = new ListObjectsRequest();
+        request.setBucketName(bucketName);
+	request.setPrefix(path);
+        ObjectListing objects = connection.listObjects(request);
+        Set<String> set = new HashSet<>();
+
+        // Clashing when run through webFramework
+        Logger.getAnonymousLogger().setLevel(Level.SEVERE);
+
+        do {
+            for (S3ObjectSummary objectSummary : objects.getObjectSummaries()) {
+                // filter out root
+                if (!objectSummary.getKey().equals(path)) {
+        	   	// Clashing when run through webFramework
+		    	// log4Jlogger.debug(path);
+	            	// Logger.getAnonymousLogger().log(Level.SEVERE, objectSummary.getKey());
+                    	set.add(new AWSFile(objectSummary, objectSummary.getKey()).getPath().substring(pathLength));
+                }
+            }
+            objects = connection.listNextBatchOfObjects(objects);
+            // Clashing when run through webFramework
+            // Logger.getAnonymousLogger().log(Level.SEVERE, "LOOP");
+
         } while (objects.isTruncated());
         return new ArrayList<>(set);
     }
 
     public void uploadFile(String path, InputStream stream, Long length) {
+    	uploadFile(this.bucketName, path, stream, length);
+    }
+
+    public void uploadFile(String bucketName, String path, InputStream stream, Long length) {
         ObjectMetadata data = new ObjectMetadata();
         data.setContentLength(length);
         connection.putObject(new PutObjectRequest(bucketName, path, stream, data));
+    }
+
+    public void setFileReadonlyACL(String bucketName, String keyName) {
+        Collection<Grant> grantCollection = new ArrayList<Grant>();
+	Grant grant1 = new Grant(new CanonicalGrantee(connection.getS3AccountOwner().getId()), Permission.Read);
+	grantCollection.add(grant1);
+	Grant grant2 = new Grant(new CanonicalGrantee(connection.getS3AccountOwner().getId()), Permission.ReadAcp);
+	grantCollection.add(grant2);
+
+        setFileACL(bucketName, keyName, grantCollection);
+    }
+
+    public void setFilePublicACL(String bucketName, String keyName) {
+        Collection<Grant> grantCollection = new ArrayList<Grant>();
+	Grant grant1 = new Grant(GroupGrantee.AllUsers, Permission.Write);
+	grantCollection.add(grant1);
+	Grant grant2 = new Grant(GroupGrantee.AllUsers, Permission.WriteAcp);
+	grantCollection.add(grant2);
+
+        setFileACL(bucketName, keyName, grantCollection);
+
+    }
+
+
+    public void setFileACL(String bucketName, String keyName, Collection<Grant> grantCollection) {
+        AccessControlList objectAcl = connection.getObjectAcl(bucketName, keyName);
+        objectAcl.getGrantsAsList().clear();
+        objectAcl.getGrantsAsList().addAll(grantCollection);
+        connection.setObjectAcl(bucketName, keyName, objectAcl);
+    }
+
+    public void setBucketReadonlyACL(String bucketName) {
+        Collection<Grant> grantCollection = new ArrayList<Grant>();
+	Grant grant1 = new Grant(new CanonicalGrantee(connection.getS3AccountOwner().getId()), Permission.Read);
+	grantCollection.add(grant1);
+	Grant grant2 = new Grant(new CanonicalGrantee(connection.getS3AccountOwner().getId()), Permission.ReadAcp);
+	grantCollection.add(grant2);
+
+        setBucketACL(bucketName, grantCollection);
+    }
+
+    public void setBucketReadwriteACL(String bucketName) {
+        Collection<Grant> grantCollection = new ArrayList<Grant>();
+	Grant grant1 = new Grant(new CanonicalGrantee(connection.getS3AccountOwner().getId()), Permission.FullControl);
+	grantCollection.add(grant1);
+
+        setBucketACL(bucketName, grantCollection);
+    }
+
+    public void setBucketPublicACL(String bucketName) {
+        Collection<Grant> grantCollection = new ArrayList<Grant>();
+	Grant grant1 = new Grant(new CanonicalGrantee(connection.getS3AccountOwner().getId()), Permission.FullControl);
+	grantCollection.add(grant1);
+	Grant grant2 = new Grant(GroupGrantee.AllUsers, Permission.Write);
+	grantCollection.add(grant2);
+
+        setBucketACL(bucketName, grantCollection);
+
+    }
+
+    public void setBucketACL(String bucketName, Collection<Grant> grantCollection) {
+        AccessControlList bucketAcl = connection.getBucketAcl(bucketName);
+
+        bucketAcl.getGrantsAsList().clear();
+        bucketAcl.getGrantsAsList().addAll(grantCollection);
+        connection.setBucketAcl(bucketName, bucketAcl);
     }
 
     public void uploadFile(String path, InputStream stream, Long length, String fingerprint) {
@@ -139,6 +307,11 @@ public class AWSFileManager implements IFileManager {
         connection.putObject(new PutObjectRequest(bucketName, path, stream, data));
     }
 
+    public void createBucket(String bucketName) {
+        CreateBucketRequest createBucketRequest = new CreateBucketRequest(bucketName);
+        connection.createBucket(createBucketRequest);
+    }
+
     public void delete(String path) {
         for (S3ObjectSummary file : connection.listObjects(bucketName, path).getObjectSummaries()) {
             connection.deleteObject(bucketName, file.getKey());
@@ -146,7 +319,7 @@ public class AWSFileManager implements IFileManager {
     }
 
     public String getMD5(String path) {
-        return connection.getObject(new GetObjectRequest(bucketName, path)).getObjectMetadata().getETag();
+        return connection.getObject(new GetObjectRequest(bucketName, path)).getObjectMetadata().getUserMetaDataOf("fingerprint");
     }
 
     public Map<String, String> getObjectMetadata(String path) {
@@ -173,11 +346,151 @@ public class AWSFileManager implements IFileManager {
     @Override
     public URL generateUrl(String s3Link) {
         S3Link link = new S3Link(s3Link);
+
         Date date = new Date();
         Calendar c = Calendar.getInstance();
         c.setTime(date);
-        c.add(Calendar.DATE, 1);
+        c.add(Calendar.DATE, 1); // 24 hours
+        // c.add(Calendar.MINUTE, 5); // 5 mins
         date = c.getTime();
-        return connection.generatePresignedUrl(link.getBucket(), link.getKey(), date, HttpMethod.PUT);
+
+	GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(link.getBucket(), link.getKey());
+	generatePresignedUrlRequest.setExpiration(date);
+	// Optional
+	// generatePresignedUrlRequest.setContentType("multipart/form-data");
+	// generatePresignedUrlRequest.setContentType("image/png");
+	// generatePresignedUrlRequest.setContentMd5("d3b07384d113edec49eaa6238ad5ff00");
+	// generatePresignedUrlRequest.setMethod(HttpMethod.PUT);
+	// generatePresignedUrlRequest.setMethod(HttpMethod.POST);
+
+        return connection.generatePresignedUrl(generatePresignedUrlRequest);
     }
+
+    private static String toHexString(byte[] bytes) {
+        Formatter formatter = new Formatter();
+    
+        for (byte b : bytes) {
+    	formatter.format("%02x", b);
+        }
+    
+        return formatter.toString();
+    }
+    
+    private static String calculateRFC2104HMAC(String data, String key)
+        throws SignatureException, NoSuchAlgorithmException, InvalidKeyException
+    {
+        SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
+        Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+        mac.init(signingKey);
+        return toHexString(mac.doFinal(data.getBytes()));
+    }
+
+    @Override
+    public String generateSwiftURL(String link_method, long link_expiry, String link_key, String delim, String protocol, String host, String port, String link) throws Exception {
+
+	long expires = (System.currentTimeMillis()/1000) + link_expiry;
+
+	String hmacBody = link_method+"\n"+expires+"\n"+link;
+
+	String hmac;
+        try {
+            hmac = calculateRFC2104HMAC(hmacBody, link_key);
+        } catch (SignatureException | NoSuchAlgorithmException e) {
+            throw new Exception("Could not calculate the HMAC.", e);
+        }
+	
+	String url = protocol+host+":"+port+link+"?temp_url_sig="+hmac+"&temp_url_expires="+expires;
+	return url;
+    }
+
+    public void copyBucketContents(String sourceBucketName, String targetBucketName) {
+
+	    String nextKey = null;
+            CopyObjectRequest copyObjRequest = null;
+
+	    ObjectListing objectListing = connection.listObjects(sourceBucketName);
+            while (true) {
+                Iterator<S3ObjectSummary> objIter = objectListing.getObjectSummaries().iterator();
+                while (objIter.hasNext()) {
+                    nextKey = objIter.next().getKey();
+		    copyObjRequest = new CopyObjectRequest(sourceBucketName, nextKey, targetBucketName, nextKey);
+                    connection.copyObject(copyObjRequest);
+                }
+    
+                // If the bucket contains many objects, the listObjects() call
+                // might not return all of the objects in the first listing. Check to
+                // see whether the listing was truncated. If so, retrieve the next page of objects 
+                // and delete them.
+                if (objectListing.isTruncated()) {
+                    objectListing = connection.listNextBatchOfObjects(objectListing);
+                } else {
+                    break;
+                }
+           }
+    }
+
+    public void deleteBucket(String bucketName) {
+	    ObjectListing objectListing = connection.listObjects(bucketName);
+            while (true) {
+                Iterator<S3ObjectSummary> objIter = objectListing.getObjectSummaries().iterator();
+                while (objIter.hasNext()) {
+                    connection.deleteObject(bucketName, objIter.next().getKey());
+                }
+    
+                // If the bucket contains many objects, the listObjects() call
+                // might not return all of the objects in the first listing. Check to
+                // see whether the listing was truncated. If so, retrieve the next page of objects 
+                // and delete them.
+                if (objectListing.isTruncated()) {
+                    objectListing = connection.listNextBatchOfObjects(objectListing);
+                } else {
+                    break;
+                }
+
+           }
+
+	   connection.deleteBucket(bucketName);
+
+     }
+
+
+    public void setBucketContentsFullcontrolACL(String bucketName) {
+
+        String nextKey = null;
+        CopyObjectRequest copyObjRequest = null;
+
+        Grantee grantee = new CanonicalGrantee(connection.getS3AccountOwner().getId());
+
+        Collection<Grant> grantCollection = new ArrayList<Grant>();
+        Grant grant1 = new Grant(grantee, Permission.FullControl);
+        grantCollection.add(grant1);
+
+	System.out.println(bucketName+"XXXXXXXXXXXX");
+        ObjectListing objectListing = connection.listObjects(bucketName);
+        while (true) {
+                Iterator<S3ObjectSummary> objIter = objectListing.getObjectSummaries().iterator();
+                while (objIter.hasNext()) {
+                    nextKey = objIter.next().getKey();
+
+                    setFileACL(bucketName, nextKey, grantCollection);
+
+                }
+
+                // If the bucket contains many objects, the listObjects() call
+                // might not return all of the objects in the first listing. Check to
+                // see whether the listing was truncated. If so, retrieve the next page of objects 
+                // and delete them.
+                if (objectListing.isTruncated()) {
+                    objectListing = connection.listNextBatchOfObjects(objectListing);
+                } else {
+                    break;
+                }
+
+           }
+    }
+
+   public String getConnectionId() {
+	return connection.getS3AccountOwner().getId().toString();
+   }
+
 }

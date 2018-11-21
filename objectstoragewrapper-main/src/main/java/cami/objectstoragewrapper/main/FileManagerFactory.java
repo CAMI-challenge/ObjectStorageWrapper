@@ -14,8 +14,8 @@ public final class FileManagerFactory {
      * @param bucketName The bucket associated with the file manager.
      * @return {@link AWSFileManager} instance
      */
-    public static IFileManager getAWSManager(String bucketName) {
-        return new AWSFileManager(bucketName);
+    public static IFileManager getAWSManager(String bucketName, String endpoint, String region) {
+        return new AWSFileManager(bucketName, endpoint, region);
     }
 
     /**
@@ -39,10 +39,10 @@ public final class FileManagerFactory {
      * @param credentialsPath AWS credentials file path for authentication.
      * @param profile         The credentials profile.
      * @return {@link AWSFileManager} instance
-     */
     public static IFileManager getAWSManager(String bucketName, String credentialsPath, String profile) {
         return new AWSFileManager(bucketName, credentialsPath, profile);
     }
+     */
 
     /**
      * Create a new Swift file manager instance with the provided credentials.
